@@ -15,7 +15,11 @@ Update this section as each feature lands.
 - [x] Create listing form: `/listings/new`, `createListing` in `src/actions/listings.ts`, `createListingSchema` and `readListingForm` in `src/lib/validation.ts`, and `MaterialsInput`. The client validates with the same schema before dispatching, and on success it redirects to `/listings`.
 - [x] Listings view: `/listings` shows PENDING listings in two sections, "Materials offered" (SUPPLY) and "Materials requested" (REQUEST), each a list of `ListingCard` title links to `/listings/[id]`
 - [x] Listing detail page and Accept: `/listings/[id]` shows all fields. `AcceptButton` binds `acceptListing(listingId)`, which does an atomic guarded `updateMany` and redirects to `/listings?accepted=1` (with a success banner). Creators see "This is your listing", accepted listings show "Accepted by", and an unknown id returns a 404.
-- [ ] Tests (Vitest and Playwright)
+- [x] Tests:
+  - Vitest in `tests/unit/` covers the validation schemas, the listing helpers, and `createListing`/`acceptListing` against a real SQLite test DB (including a concurrent-accept race).
+  - Playwright in `tests/e2e/` covers the full flow in Chromium: create, Supply/Request separation, creator can't accept, another user accepts, a stale accept shows an error, and re-login reuses the same UUID.
+
+The MVP is complete.
 
 ## Tech Stack
 - **Next.js 15 (App Router) + TypeScript.** It is a single monolith: pages are React Server Components, and mutations are **Server Actions**. There is no separate REST API.
@@ -47,6 +51,8 @@ Update this section as each feature lands.
 - `materials` is stored as a **JSON string** because SQLite has no arrays. Always parse and serialize it through a helper, never inline.
 - The creator's name comes from the `creator` relation. Don't copy it onto the listing.
 - Enum-like fields are strings in SQLite. Keep their allowed values in TypeScript union types and the Zod enums.
+- Prisma blocks `prisma migrate reset` when an AI agent runs it, unless the user explicitly consents. Don't bypass it. Test databases use `prisma migrate deploy`, plus per-test cleanup or unique data.
+- E2E selectors: use `{ exact: true }` for labels that are prefixes of other labels (e.g. "Material 1" and "Remove material 1"). Don't use `getByRole("alert")`, because Next's route announcer is also an alert.
 
 ## Layout
 ```
@@ -56,7 +62,8 @@ src/actions/        auth.ts, listings.ts
 src/lib/            db.ts, session.ts, validation.ts
 src/components/     Header, Tile, ListingCard, MaterialsInput
 src/middleware.ts   (it must live in src/ because the project uses a src dir)
-tests/              Vitest unit + Playwright e2e
+tests/unit/         Vitest (vitest.config.ts); global-setup.ts migrates prisma/test.db
+tests/e2e/          Playwright (playwright.config.ts); builds the app and serves it on :3100 against prisma/e2e.db
 ```
 
 ## Commands
@@ -64,9 +71,9 @@ tests/              Vitest unit + Playwright e2e
 - `npm run dev` starts the dev server.
 - `npm run db:migrate` (`prisma migrate dev`) applies and creates migrations.
 - `npm run db:seed` resets the listings and loads sample users (Alice, Bob) and listings.
-- `npm run lint`, `npx tsc --noEmit` and `npm run build` are the checks to run before every commit.
-- `npm test` runs the Vitest unit tests.
-- `npx playwright test` runs the e2e tests.
+- `npm test` runs the Vitest unit tests. They use `prisma/test.db`, and each test clears its tables in `beforeEach`.
+- `npm run test:e2e` runs Playwright. It runs a production build on port 3100 against `prisma/e2e.db`, and uses unique names per run, so it never needs a reset. First-time setup: `npx playwright install --with-deps chromium`.
+- Before committing, run `npm run lint`, `npx tsc --noEmit`, `npm test`, `npm run test:e2e` and `npm run build`.
 
 ## MVP Scope
 **Out of scope for now:**
