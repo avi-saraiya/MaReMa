@@ -22,6 +22,7 @@ model Listing {
   materials        String // JSON array of strings (SQLite has no arrays)
   exchangeLocation String
   priceCents       Int
+  weightCategory   String? // "LIGHT" | "MEDIUM" | "HEAVY"; null for listings created before it existed
   status           String    @default("PENDING") // "PENDING" | "ACTIVE"
   creatorId        String
   creator          User      @relation("created", fields: [creatorId], references: [id])

@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useState } from "react";
 import { createListing, type CreateListingState } from "@/actions/listings";
 import MaterialsInput from "@/components/MaterialsInput";
+import { WEIGHT_CATEGORIES, WEIGHT_CATEGORY_INFO } from "@/lib/listing";
 import { createListingSchema, readListingForm, type CreateListingErrors } from "@/lib/validation";
 
 const inputClass =
@@ -111,6 +112,31 @@ export default function CreateListingForm() {
         </p>
         <FieldError id="price-error" messages={errors.priceCents} />
       </div>
+
+      <fieldset aria-describedby="weightCategory-error">
+        <legend className="text-sm font-medium">Weight category</legend>
+        <p className="text-sm text-gray-500">Roughly how heavy are the materials in total?</p>
+        <div className="mt-2 grid gap-3 sm:grid-cols-3">
+          {WEIGHT_CATEGORIES.map((value) => {
+            const { label, range, hint } = WEIGHT_CATEGORY_INFO[value];
+            return (
+              <label
+                key={value}
+                className="flex cursor-pointer gap-3 rounded-lg border border-gray-300 p-3 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50"
+              >
+                <input type="radio" name="weightCategory" value={value} className="mt-1 accent-emerald-700" />
+                <span>
+                  <span className="block font-medium">{label}</span>
+                  <span className="block text-sm text-gray-600">
+                    {range}. {hint}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+        <FieldError id="weightCategory-error" messages={errors.weightCategory} />
+      </fieldset>
 
       <button
         type="submit"

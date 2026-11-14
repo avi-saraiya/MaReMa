@@ -8,6 +8,7 @@ function listingForm(overrides: Record<string, string | string[] | undefined> = 
     materials: ["Chairs", "Cushions"],
     exchangeLocation: "Library",
     price: "12.50",
+    weightCategory: "MEDIUM",
     ...overrides,
   };
   const formData = new FormData();
@@ -43,6 +44,7 @@ describe("createListingSchema", () => {
       materials: ["Chairs", "Desk"],
       exchangeLocation: "Library",
       priceCents: 1250,
+      weightCategory: "MEDIUM",
     });
   });
 
@@ -69,6 +71,8 @@ describe("createListingSchema", () => {
     ["three decimal places", { price: "1.999" }, "priceCents"],
     ["non-numeric price", { price: "abc" }, "priceCents"],
     ["price over $10,000", { price: "10000.01" }, "priceCents"],
+    ["missing weight category", { weightCategory: undefined }, "weightCategory"],
+    ["unknown weight category", { weightCategory: "ENORMOUS" }, "weightCategory"],
   ])("rejects %s", (_label, overrides, field) => {
     const result = listingForm(overrides);
     expect(result.success).toBe(false);

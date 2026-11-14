@@ -42,6 +42,7 @@ test("create a supply listing, then another user accepts it", async ({ page, bro
   await expect(page.getByText("Choose whether you are supplying or requesting materials.")).toBeVisible();
   await expect(page.getByText("Please enter a title.")).toBeVisible();
   await expect(page.getByText("Add at least one material.")).toBeVisible();
+  await expect(page.getByText("Choose a weight category.")).toBeVisible();
   await expect(page).toHaveURL(/\/listings\/new$/);
 
   await page.getByRole("radio", { name: /Supply materials/ }).check();
@@ -51,6 +52,7 @@ test("create a supply listing, then another user accepts it", async ({ page, bro
   await page.getByLabel("Material 2", { exact: true }).fill("Plywood sheets");
   await page.getByLabel("Exchange location").fill("Engineering loading dock");
   await page.getByLabel("Price ($)").fill("4.50");
+  await page.getByRole("radio", { name: /Heavy/ }).check();
   await page.getByRole("button", { name: "Create listing" }).click();
 
   // It appears under Supply only.
@@ -69,6 +71,7 @@ test("create a supply listing, then another user accepts it", async ({ page, bro
   await expect(page.getByText("Plywood sheets")).toBeVisible();
   await expect(page.getByText("Engineering loading dock")).toBeVisible();
   await expect(page.getByText("$4.50")).toBeVisible();
+  await expect(page.getByText("Heavy (over 20 kg)")).toBeVisible();
   await expect(page.getByRole("article").getByText(ALICE)).toBeVisible();
   await expect(page.getByText("This is your listing.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Accept" })).toHaveCount(0);

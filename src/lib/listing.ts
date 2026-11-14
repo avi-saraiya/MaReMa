@@ -4,6 +4,23 @@ export type ListingType = (typeof LISTING_TYPES)[number];
 export const LISTING_STATUSES = ["PENDING", "ACTIVE"] as const;
 export type ListingStatus = (typeof LISTING_STATUSES)[number];
 
+export const WEIGHT_CATEGORIES = ["LIGHT", "MEDIUM", "HEAVY"] as const;
+export type WeightCategory = (typeof WEIGHT_CATEGORIES)[number];
+
+export const WEIGHT_CATEGORY_INFO: Record<WeightCategory, { label: string; range: string; hint: string }> = {
+  LIGHT: { label: "Light", range: "Under 5 kg", hint: "Easy to carry by hand." },
+  MEDIUM: { label: "Medium", range: "5–20 kg", hint: "One person can carry it." },
+  HEAVY: { label: "Heavy", range: "Over 20 kg", hint: "Needs help or a vehicle." },
+};
+
+// Older listings have no weight category, and unknown values are treated the same way.
+export function formatWeightCategory(value: string | null): string {
+  const info = (WEIGHT_CATEGORIES as readonly string[]).includes(value ?? "")
+    ? WEIGHT_CATEGORY_INFO[value as WeightCategory]
+    : undefined;
+  return info ? `${info.label} (${info.range.toLowerCase()})` : "Not specified";
+}
+
 // SQLite has no array column, so materials are stored as a JSON string.
 export function serializeMaterials(materials: string[]): string {
   return JSON.stringify(materials);

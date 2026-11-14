@@ -16,6 +16,7 @@ async function main() {
         materials: serializeMaterials(["Beakers (250 mL)", "Graduated cylinders", "Petri dishes"]),
         exchangeLocation: "Science Building, Room 102",
         priceCents: 500,
+        weightCategory: "LIGHT",
         creatorId: alice.id,
       },
       {
@@ -24,6 +25,7 @@ async function main() {
         materials: serializeMaterials(["Plywood sheets", "2x4 offcuts"]),
         exchangeLocation: "Engineering workshop loading dock",
         priceCents: 0,
+        weightCategory: "HEAVY",
         creatorId: bob.id,
       },
       {
@@ -32,6 +34,7 @@ async function main() {
         materials: serializeMaterials(["Corrugated cardboard", "Foam board"]),
         exchangeLocation: "Architecture studio",
         priceCents: 300,
+        weightCategory: "MEDIUM",
         creatorId: alice.id,
       },
     ],

@@ -21,6 +21,9 @@ Update this section as each feature lands.
 
 The MVP is complete.
 
+Post-MVP features:
+- [x] Weight category: `weightCategory` (`LIGHT` | `MEDIUM` | `HEAVY`, one per listing) is a required radio group on the create form and is shown on the detail page via `formatWeightCategory`. The column is nullable because older listings have no value, and the detail page shows those as "Not specified".
+
 ## Tech Stack
 - **Next.js 15 (App Router) + TypeScript.** It is a single monolith: pages are React Server Components, and mutations are **Server Actions**. There is no separate REST API.
 - **Prisma ORM + SQLite** (`prisma/dev.db`). Moving to Postgres later should only require changing the datasource.
@@ -37,6 +40,7 @@ The MVP is complete.
   - `materials`, a list of strings
   - `exchangeLocation`
   - `priceCents`
+  - `weightCategory` (`LIGHT` under 5 kg | `MEDIUM` 5–20 kg | `HEAVY` over 20 kg), required when creating a listing. It is nullable in the database for listings created before the field existed.
   - `creator`
   - `status`
   - `acceptedBy` / `acceptedAt`

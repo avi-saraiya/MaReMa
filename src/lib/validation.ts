@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { LISTING_TYPES } from "@/lib/listing";
+import { LISTING_TYPES, WEIGHT_CATEGORIES } from "@/lib/listing";
 
 export const loginSchema = z.object({
   name: z
@@ -47,6 +47,9 @@ export const createListingSchema = z.object({
     .regex(/^\d+(\.\d{1,2})?$/, "Price must be a non-negative amount with at most 2 decimal places.")
     .transform(dollarsToCents)
     .refine((cents) => cents <= MAX_PRICE_CENTS, "Price must be $10,000 or less."),
+  weightCategory: z.enum(WEIGHT_CATEGORIES, {
+    errorMap: () => ({ message: "Choose a weight category." }),
+  }),
 });
 
 export type CreateListingInput = z.infer<typeof createListingSchema>;
@@ -60,5 +63,6 @@ export function readListingForm(formData: FormData) {
     materials: formData.getAll("materials"),
     exchangeLocation: formData.get("exchangeLocation") ?? "",
     priceCents: formData.get("price") ?? "",
+    weightCategory: formData.get("weightCategory") ?? undefined,
   };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPrice, parseMaterials, serializeMaterials } from "@/lib/listing";
+import { formatPrice, formatWeightCategory, parseMaterials, serializeMaterials } from "@/lib/listing";
 
 describe("materials JSON helpers", () => {
   it("round-trips a list of materials", () => {
@@ -19,5 +19,18 @@ describe("formatPrice", () => {
     expect(formatPrice(0)).toBe("Free");
     expect(formatPrice(5)).toBe("$0.05");
     expect(formatPrice(1250)).toBe("$12.50");
+  });
+});
+
+describe("formatWeightCategory", () => {
+  it("shows the label and range for known categories", () => {
+    expect(formatWeightCategory("LIGHT")).toBe("Light (under 5 kg)");
+    expect(formatWeightCategory("MEDIUM")).toBe("Medium (5–20 kg)");
+    expect(formatWeightCategory("HEAVY")).toBe("Heavy (over 20 kg)");
+  });
+
+  it("shows Not specified for missing or unknown values", () => {
+    expect(formatWeightCategory(null)).toBe("Not specified");
+    expect(formatWeightCategory("toString")).toBe("Not specified");
   });
 });
