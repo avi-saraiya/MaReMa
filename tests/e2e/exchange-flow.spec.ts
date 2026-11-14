@@ -102,6 +102,11 @@ test("create a supply listing, then another user accepts it", async ({ page, bro
   // Carol's stale Accept is refused with an inline error.
   await carolPage.getByRole("button", { name: "Accept" }).click();
   await expect(carolPage.getByText("Someone else has already accepted this listing.")).toBeVisible();
+
+  // Carol isn't part of the exchange, so she can't mark it as completed.
+  await carolPage.reload();
+  await expect(carolPage.getByText("This listing has already been accepted.")).toBeVisible();
+  await expect(carolPage.getByRole("button", { name: "Mark as completed" })).toHaveCount(0);
   await carolContext.close();
 
   // The listing still exists, now ACTIVE and attributed to Bob.
@@ -109,6 +114,16 @@ test("create a supply listing, then another user accepts it", async ({ page, bro
   expect(listing.status).toBe("ACTIVE");
   expect(listing.acceptedBy?.name).toBe(BOB);
   expect(listing.acceptedAt).not.toBeNull();
+
+  // Bob, who accepted, marks the exchange as completed after the hand-off.
+  await page.goto(detailUrl);
+  await expect(page.getByText("Active", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Mark as completed" }).click();
+  await expect(page.getByText("This exchange has been completed.")).toBeVisible();
+  await expect(page.getByText("Completed", { exact: true })).toBeVisible();
+  await expect(page.getByText("Completed on")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mark as completed" })).toHaveCount(0);
+  expect((await db.listing.findUniqueOrThrow({ where: { id: listing.id } })).status).toBe("COMPLETED");
 
   // Logging in again as Alice reuses the same user.
   await page.getByRole("button", { name: "Log out" }).click();

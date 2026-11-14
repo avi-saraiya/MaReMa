@@ -46,3 +46,36 @@ export async function acceptListing(listingId: string): Promise<AcceptListingSta
   revalidatePath("/listings");
   redirect("/listings?accepted=1");
 }
+
+export type CompleteExchangeState = { error?: string };
+
+export async function completeExchange(listingId: string): Promise<CompleteExchangeState> {
+  const user = await requireUser();
+  if (typeof listingId !== "string") return { error: "Invalid listing." };
+
+  // Single conditional update: only an ACTIVE listing, and only by its creator or the user who accepted it.
+  const { count } = await db.listing.updateMany({
+    where: {
+      id: listingId,
+      status: "ACTIVE",
+      OR: [{ creatorId: user.id }, { acceptedById: user.id }],
+    },
+    data: { status: "COMPLETED", completedAt: new Date() },
+  });
+
+  if (count === 0) {
+    const listing = await db.listing.findUnique({
+      where: { id: listingId },
+      select: { status: true, creatorId: true, acceptedById: true },
+    });
+    if (!listing) return { error: "This listing no longer exists." };
+    if (listing.creatorId !== user.id && listing.acceptedById !== user.id) {
+      return { error: "Only the people in this exchange can mark it as completed." };
+    }
+    if (listing.status === "COMPLETED") return { error: "This exchange has already been marked as completed." };
+    return { error: "This listing hasn't been accepted yet." };
+  }
+
+  revalidatePath(`/listings/${listingId}`);
+  return {};
+}

@@ -4,6 +4,11 @@ import { db } from "@/lib/db";
 import { formatPrice, formatWeight, formatWeightCategory, parseMaterials } from "@/lib/listing";
 import { requireUser } from "@/lib/session";
 import AcceptButton from "./AcceptButton";
+import CompleteButton from "./CompleteButton";
+
+function formatDate(date: Date): string {
+  return date.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+}
 
 export default async function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
@@ -17,7 +22,14 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
   const isSupply = listing.type === "SUPPLY";
   const isPending = listing.status === "PENDING";
+  const isActive = listing.status === "ACTIVE";
   const isOwn = listing.creator.id === user.id;
+  const isParticipant = isOwn || listing.acceptedById === user.id;
+  const statusBadge = isPending
+    ? { label: "Pending", className: "bg-amber-100 text-amber-800" }
+    : isActive
+      ? { label: "Active", className: "bg-sky-100 text-sky-800" }
+      : { label: "Completed", className: "bg-emerald-700 text-white" };
   const materials = parseMaterials(listing.materials);
 
   return (
@@ -31,12 +43,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
           <span className="rounded-full bg-emerald-100 px-3 py-0.5 text-sm font-medium text-emerald-800">
             {isSupply ? "Materials offered" : "Materials requested"}
           </span>
-          <span
-            className={`rounded-full px-3 py-0.5 text-sm font-medium ${
-              isPending ? "bg-amber-100 text-amber-800" : "bg-sky-100 text-sky-800"
-            }`}
-          >
-            {isPending ? "Pending" : "Active"}
+          <span className={`rounded-full px-3 py-0.5 text-sm font-medium ${statusBadge.className}`}>
+            {statusBadge.label}
           </span>
         </div>
         <h1 className="mt-3 text-3xl font-bold">{listing.title}</h1>
@@ -66,10 +74,20 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
               <dd>{listing.acceptedBy.name}</dd>
             </>
           )}
+          {listing.completedAt && (
+            <>
+              <dt className="text-sm font-medium text-gray-500">Completed on</dt>
+              <dd>{formatDate(listing.completedAt)}</dd>
+            </>
+          )}
         </dl>
 
         <div className="mt-8 border-t border-gray-200 pt-6">
-          {!isPending ? (
+          {listing.status === "COMPLETED" ? (
+            <p className="text-gray-600">This exchange has been completed.</p>
+          ) : isActive && isParticipant ? (
+            <CompleteButton listingId={listing.id} />
+          ) : isActive ? (
             <p className="text-gray-600">This listing has already been accepted.</p>
           ) : isOwn ? (
             <p className="text-gray-600">This is your listing. Another user can accept it.</p>

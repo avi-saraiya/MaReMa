@@ -24,7 +24,7 @@ The MVP is complete.
 Post-MVP features:
 - [x] Weight category: `weightCategory` (`LIGHT` | `MEDIUM` | `HEAVY`, one per listing) is a required radio group on the create form and is shown on the detail page via `formatWeightCategory`. The column is nullable because older listings have no value, and the detail page shows those as "Not specified".
 - [x] Exact weight: `weightGrams` (integer grams, nullable for older listings) is a required "Weight (kg)" input on the create form (> 0, ≤ 10,000 kg, up to 3 decimals). `createListingSchema` checks that it falls inside the chosen category's range (`weightCategoryFor`), and the detail page shows it via `formatWeight`.
-- [ ] Completion step: a `COMPLETED` status and a "Mark as completed" action for exchange participants.
+- [x] Completion step: `completeExchange(listingId)` in `src/actions/listings.ts` moves an ACTIVE listing to COMPLETED and sets `completedAt`. It's an atomic guarded `updateMany` (`status = 'ACTIVE' AND (creatorId = user OR acceptedById = user)`), so either participant can complete it once, and nobody else can. `CompleteButton` shows on the detail page for participants of an ACTIVE listing, and a completed listing shows "Completed on".
 - [ ] Environmental impact dashboard: per-user totals (weight reused, materials reused, successful exchanges) over COMPLETED exchanges, for both the supplier and the requester.
 
 ## Tech Stack
@@ -48,7 +48,7 @@ Post-MVP features:
   - `creator`
   - `status`
   - `acceptedBy` / `acceptedAt`
-- The **status lifecycle** is `PENDING` (the default) → `ACTIVE` when accepted.
+- The **status lifecycle** is `PENDING` (the default) → `ACTIVE` when accepted → `COMPLETED` when either participant (the creator or the accepter) marks the hand-off as done. One confirmation is enough, and completion records `completedAt`. Only COMPLETED exchanges count as successful.
 - The **listings view** shows only `PENDING` listings. **Supply and Request listings must always be shown separately.** Active listings stay in the database.
 - **Accept** is only allowed for users other than the creator. The app records `acceptedById` and `acceptedAt`. It runs as an atomic `updateMany` where `status = 'PENDING' AND creatorId != userId`. If the count is 0, the action fails (the listing was already taken or belongs to the user).
 

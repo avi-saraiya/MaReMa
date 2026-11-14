@@ -17,7 +17,7 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
-const { acceptListing, createListing } = await import("@/actions/listings");
+const { acceptListing, completeExchange, createListing } = await import("@/actions/listings");
 const { db } = await import("@/lib/db");
 
 let alice: User;
@@ -147,5 +147,73 @@ describe("acceptListing", () => {
     const listing = await db.listing.findUniqueOrThrow({ where: { id: listingId } });
     expect(listing.status).toBe("ACTIVE");
     expect([bob.id, carol.id]).toContain(listing.acceptedById);
+  });
+});
+
+describe("completeExchange", () => {
+  async function acceptAsBob() {
+    await db.listing.update({
+      where: { id: listingId },
+      data: { status: "ACTIVE", acceptedById: bob.id, acceptedAt: new Date() },
+    });
+  }
+
+  it.each([
+    ["the user who accepted", () => bob],
+    ["the creator", () => alice],
+  ])("lets %s mark an ACTIVE exchange as completed", async (_label, who) => {
+    await acceptAsBob();
+    session.user = who();
+    expect(await completeExchange(listingId)).toEqual({});
+
+    const listing = await db.listing.findUniqueOrThrow({ where: { id: listingId } });
+    expect(listing.status).toBe("COMPLETED");
+    expect(listing.completedAt).toBeInstanceOf(Date);
+    expect(listing.acceptedById).toBe(bob.id);
+  });
+
+  it("refuses someone who is not part of the exchange", async () => {
+    await acceptAsBob();
+    session.user = carol;
+    expect(await completeExchange(listingId)).toEqual({
+      error: "Only the people in this exchange can mark it as completed.",
+    });
+    expect((await db.listing.findUniqueOrThrow({ where: { id: listingId } })).status).toBe("ACTIVE");
+  });
+
+  it("refuses a listing that has not been accepted", async () => {
+    session.user = alice;
+    expect(await completeExchange(listingId)).toEqual({ error: "This listing hasn't been accepted yet." });
+    expect((await db.listing.findUniqueOrThrow({ where: { id: listingId } })).status).toBe("PENDING");
+  });
+
+  it("refuses to complete the same exchange twice, keeping the first completion time", async () => {
+    await acceptAsBob();
+    session.user = bob;
+    await completeExchange(listingId);
+    const { completedAt } = await db.listing.findUniqueOrThrow({ where: { id: listingId } });
+
+    session.user = alice;
+    expect(await completeExchange(listingId)).toEqual({
+      error: "This exchange has already been marked as completed.",
+    });
+    expect((await db.listing.findUniqueOrThrow({ where: { id: listingId } })).completedAt).toEqual(completedAt);
+  });
+
+  it("reports a listing that does not exist", async () => {
+    session.user = bob;
+    expect(await completeExchange("00000000-0000-0000-0000-000000000000")).toEqual({
+      error: "This listing no longer exists.",
+    });
+  });
+
+  it("does not let a COMPLETED listing be accepted", async () => {
+    await db.listing.update({
+      where: { id: listingId },
+      data: { status: "COMPLETED", acceptedById: bob.id, acceptedAt: new Date(), completedAt: new Date() },
+    });
+    session.user = carol;
+    expect((await acceptListing(listingId)).error).toBeTruthy();
+    expect((await db.listing.findUniqueOrThrow({ where: { id: listingId } })).acceptedById).toBe(bob.id);
   });
 });

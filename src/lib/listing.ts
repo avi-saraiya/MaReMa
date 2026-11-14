@@ -1,7 +1,8 @@
 export const LISTING_TYPES = ["SUPPLY", "REQUEST"] as const;
 export type ListingType = (typeof LISTING_TYPES)[number];
 
-export const LISTING_STATUSES = ["PENDING", "ACTIVE"] as const;
+// PENDING (open) -> ACTIVE (accepted) -> COMPLETED (a participant confirmed the hand-off).
+export const LISTING_STATUSES = ["PENDING", "ACTIVE", "COMPLETED"] as const;
 export type ListingStatus = (typeof LISTING_STATUSES)[number];
 
 export const WEIGHT_CATEGORIES = ["LIGHT", "MEDIUM", "HEAVY"] as const;
