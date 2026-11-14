@@ -63,6 +63,7 @@ describe("createListing", () => {
       exchangeLocation: "Studio",
       price: "0",
       weightCategory: "HEAVY",
+      weight: "30",
     });
 
     await expect(createListing({}, fd)).rejects.toThrow("REDIRECT:/listings");
@@ -74,6 +75,7 @@ describe("createListing", () => {
       exchangeLocation: "Studio",
       priceCents: 0,
       weightCategory: "HEAVY",
+      weightGrams: 30_000,
       status: "PENDING",
       creatorId: bob.id,
       acceptedById: null,
@@ -85,7 +87,7 @@ describe("createListing", () => {
     const result = await createListing({}, formData({ type: "SELL", title: "", price: "-1" }));
 
     expect(Object.keys(result.errors ?? {}).sort()).toEqual(
-      ["exchangeLocation", "materials", "priceCents", "title", "type", "weightCategory"].sort(),
+      ["exchangeLocation", "materials", "priceCents", "title", "type", "weightCategory", "weightGrams"].sort(),
     );
     expect(await db.listing.count()).toBe(1);
   });

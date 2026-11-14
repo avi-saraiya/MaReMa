@@ -138,6 +138,27 @@ export default function CreateListingForm() {
         <FieldError id="weightCategory-error" messages={errors.weightCategory} />
       </fieldset>
 
+      <div>
+        <label htmlFor="weight" className="block text-sm font-medium">
+          Weight (kg)
+        </label>
+        <input
+          id="weight"
+          name="weight"
+          type="number"
+          inputMode="decimal"
+          min={0}
+          step={0.001}
+          placeholder="e.g. 12.5"
+          aria-describedby="weight-hint weight-error"
+          className={`mt-1 ${inputClass} sm:max-w-40`}
+        />
+        <p id="weight-hint" className="mt-1 text-sm text-gray-500">
+          Total weight of all the materials. It must match the weight category.
+        </p>
+        <FieldError id="weight-error" messages={errors.weightGrams} />
+      </div>
+
       <button
         type="submit"
         disabled={pending}

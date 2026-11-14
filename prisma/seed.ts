@@ -17,6 +17,7 @@ async function main() {
         exchangeLocation: "Science Building, Room 102",
         priceCents: 500,
         weightCategory: "LIGHT",
+        weightGrams: 3_000,
         creatorId: alice.id,
       },
       {
@@ -26,6 +27,7 @@ async function main() {
         exchangeLocation: "Engineering workshop loading dock",
         priceCents: 0,
         weightCategory: "HEAVY",
+        weightGrams: 45_000,
         creatorId: bob.id,
       },
       {
@@ -35,6 +37,7 @@ async function main() {
         exchangeLocation: "Architecture studio",
         priceCents: 300,
         weightCategory: "MEDIUM",
+        weightGrams: 8_000,
         creatorId: alice.id,
       },
     ],

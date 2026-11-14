@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { formatPrice, formatWeightCategory, parseMaterials } from "@/lib/listing";
+import { formatPrice, formatWeight, formatWeightCategory, parseMaterials } from "@/lib/listing";
 import { requireUser } from "@/lib/session";
 import AcceptButton from "./AcceptButton";
 
@@ -56,6 +56,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
           <dd>{formatPrice(listing.priceCents)}</dd>
           <dt className="text-sm font-medium text-gray-500">Weight category</dt>
           <dd>{formatWeightCategory(listing.weightCategory)}</dd>
+          <dt className="text-sm font-medium text-gray-500">Weight</dt>
+          <dd>{formatWeight(listing.weightGrams)}</dd>
           <dt className="text-sm font-medium text-gray-500">{isSupply ? "Offered by" : "Requested by"}</dt>
           <dd>{listing.creator.name}</dd>
           {listing.acceptedBy && (

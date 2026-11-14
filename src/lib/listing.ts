@@ -21,6 +21,19 @@ export function formatWeightCategory(value: string | null): string {
   return info ? `${info.label} (${info.range.toLowerCase()})` : "Not specified";
 }
 
+// Category boundaries: Light < 5 kg, Medium 5–20 kg (inclusive), Heavy > 20 kg.
+export function weightCategoryFor(grams: number): WeightCategory {
+  if (grams < 5_000) return "LIGHT";
+  if (grams <= 20_000) return "MEDIUM";
+  return "HEAVY";
+}
+
+// Weights are stored as integer grams and shown in kg.
+export function formatWeight(grams: number | null): string {
+  if (grams === null) return "Not specified";
+  return `${(grams / 1000).toLocaleString("en-US", { maximumFractionDigits: 3 })} kg`;
+}
+
 // SQLite has no array column, so materials are stored as a JSON string.
 export function serializeMaterials(materials: string[]): string {
   return JSON.stringify(materials);

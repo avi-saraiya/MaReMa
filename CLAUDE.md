@@ -23,6 +23,9 @@ The MVP is complete.
 
 Post-MVP features:
 - [x] Weight category: `weightCategory` (`LIGHT` | `MEDIUM` | `HEAVY`, one per listing) is a required radio group on the create form and is shown on the detail page via `formatWeightCategory`. The column is nullable because older listings have no value, and the detail page shows those as "Not specified".
+- [x] Exact weight: `weightGrams` (integer grams, nullable for older listings) is a required "Weight (kg)" input on the create form (> 0, ≤ 10,000 kg, up to 3 decimals). `createListingSchema` checks that it falls inside the chosen category's range (`weightCategoryFor`), and the detail page shows it via `formatWeight`.
+- [ ] Completion step: a `COMPLETED` status and a "Mark as completed" action for exchange participants.
+- [ ] Environmental impact dashboard: per-user totals (weight reused, materials reused, successful exchanges) over COMPLETED exchanges, for both the supplier and the requester.
 
 ## Tech Stack
 - **Next.js 15 (App Router) + TypeScript.** It is a single monolith: pages are React Server Components, and mutations are **Server Actions**. There is no separate REST API.
@@ -41,6 +44,7 @@ Post-MVP features:
   - `exchangeLocation`
   - `priceCents`
   - `weightCategory` (`LIGHT` under 5 kg | `MEDIUM` 5–20 kg | `HEAVY` over 20 kg), required when creating a listing. It is nullable in the database for listings created before the field existed.
+  - `weightGrams`, the exact total weight, stored as **integer grams** and entered in kg. It is required when creating a listing and must fall inside the chosen weight category's range. It is nullable for older listings.
   - `creator`
   - `status`
   - `acceptedBy` / `acceptedAt`

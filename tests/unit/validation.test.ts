@@ -9,6 +9,7 @@ function listingForm(overrides: Record<string, string | string[] | undefined> = 
     exchangeLocation: "Library",
     price: "12.50",
     weightCategory: "MEDIUM",
+    weight: "12.5",
     ...overrides,
   };
   const formData = new FormData();
@@ -45,7 +46,27 @@ describe("createListingSchema", () => {
       exchangeLocation: "Library",
       priceCents: 1250,
       weightCategory: "MEDIUM",
+      weightGrams: 12_500,
     });
+  });
+
+  it.each([
+    ["0.001", "LIGHT", 1],
+    ["4.999", "LIGHT", 4_999],
+    ["5", "MEDIUM", 5_000],
+    ["20", "MEDIUM", 20_000],
+    ["20.001", "HEAVY", 20_001],
+    ["10000", "HEAVY", 10_000_000],
+  ])("parses weight %s kg in category %s as %i grams", (weight, weightCategory, grams) => {
+    const result = listingForm({ weight, weightCategory });
+    expect(result.success && result.data.weightGrams).toBe(grams);
+  });
+
+  it("rejects a weight outside the chosen category's range", () => {
+    const result = listingForm({ weight: "2", weightCategory: "HEAVY" });
+    expect(firstError(result, "weightGrams")).toBe(
+      "Heavy listings must weigh over 20 kg. Change the weight or the category.",
+    );
   });
 
   it.each([
@@ -73,6 +94,11 @@ describe("createListingSchema", () => {
     ["price over $10,000", { price: "10000.01" }, "priceCents"],
     ["missing weight category", { weightCategory: undefined }, "weightCategory"],
     ["unknown weight category", { weightCategory: "ENORMOUS" }, "weightCategory"],
+    ["blank weight", { weight: "" }, "weightGrams"],
+    ["zero weight", { weight: "0" }, "weightGrams"],
+    ["negative weight", { weight: "-3" }, "weightGrams"],
+    ["four decimal places of weight", { weight: "1.0001" }, "weightGrams"],
+    ["weight over 10,000 kg", { weight: "10000.001", weightCategory: "HEAVY" }, "weightGrams"],
   ])("rejects %s", (_label, overrides, field) => {
     const result = listingForm(overrides);
     expect(result.success).toBe(false);

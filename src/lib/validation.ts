@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { LISTING_TYPES, WEIGHT_CATEGORIES } from "@/lib/listing";
+import { LISTING_TYPES, WEIGHT_CATEGORIES, WEIGHT_CATEGORY_INFO, weightCategoryFor } from "@/lib/listing";
 
 export const loginSchema = z.object({
   name: z
@@ -10,14 +10,16 @@ export const loginSchema = z.object({
 });
 
 const MAX_PRICE_CENTS = 10_000_00;
+const MAX_WEIGHT_GRAMS = 10_000_000; // 10,000 kg
 
-// Parse dollars as a string to avoid floating-point rounding (e.g. "19.99" -> 1999).
-function dollarsToCents(value: string): number {
+// Parse a decimal string into integer minor units without floating-point rounding
+// (e.g. dollars "19.99" -> 1999 cents with places = 2, kg "2.5" -> 2500 g with places = 3).
+function decimalToMinorUnits(value: string, places: number): number {
   const [whole, fraction = ""] = value.split(".");
-  return Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
+  return Number(whole) * 10 ** places + Number(fraction.padEnd(places, "0"));
 }
 
-export const createListingSchema = z.object({
+const listingFieldsSchema = z.object({
   type: z.enum(LISTING_TYPES, {
     errorMap: () => ({ message: "Choose whether you are supplying or requesting materials." }),
   }),
@@ -45,11 +47,31 @@ export const createListingSchema = z.object({
     .trim()
     .min(1, "Please enter a price (0 for free).")
     .regex(/^\d+(\.\d{1,2})?$/, "Price must be a non-negative amount with at most 2 decimal places.")
-    .transform(dollarsToCents)
+    .transform((value) => decimalToMinorUnits(value, 2))
     .refine((cents) => cents <= MAX_PRICE_CENTS, "Price must be $10,000 or less."),
   weightCategory: z.enum(WEIGHT_CATEGORIES, {
     errorMap: () => ({ message: "Choose a weight category." }),
   }),
+  weightGrams: z
+    .string()
+    .trim()
+    .min(1, "Please enter the weight in kg.")
+    .regex(/^\d+(\.\d{1,3})?$/, "Weight must be a positive number of kg with at most 3 decimal places.")
+    .transform((value) => decimalToMinorUnits(value, 3))
+    .refine((grams) => grams > 0, "Weight must be more than 0 kg.")
+    .refine((grams) => grams <= MAX_WEIGHT_GRAMS, "Weight must be 10,000 kg or less."),
+});
+
+// The exact weight must fall inside the chosen category's range. Zod only runs this once every field is valid.
+export const createListingSchema = listingFieldsSchema.superRefine((listing, ctx) => {
+  if (weightCategoryFor(listing.weightGrams) !== listing.weightCategory) {
+    const { label, range } = WEIGHT_CATEGORY_INFO[listing.weightCategory];
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["weightGrams"],
+      message: `${label} listings must weigh ${range.toLowerCase()}. Change the weight or the category.`,
+    });
+  }
 });
 
 export type CreateListingInput = z.infer<typeof createListingSchema>;
@@ -64,5 +86,6 @@ export function readListingForm(formData: FormData) {
     exchangeLocation: formData.get("exchangeLocation") ?? "",
     priceCents: formData.get("price") ?? "",
     weightCategory: formData.get("weightCategory") ?? undefined,
+    weightGrams: formData.get("weight") ?? "",
   };
 }

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { formatPrice, formatWeightCategory, parseMaterials, serializeMaterials } from "@/lib/listing";
+import {
+  formatPrice,
+  formatWeight,
+  formatWeightCategory,
+  parseMaterials,
+  serializeMaterials,
+  weightCategoryFor,
+} from "@/lib/listing";
 
 describe("materials JSON helpers", () => {
   it("round-trips a list of materials", () => {
@@ -32,5 +39,23 @@ describe("formatWeightCategory", () => {
   it("shows Not specified for missing or unknown values", () => {
     expect(formatWeightCategory(null)).toBe("Not specified");
     expect(formatWeightCategory("toString")).toBe("Not specified");
+  });
+});
+
+describe("weightCategoryFor", () => {
+  it("maps grams to categories at the boundaries", () => {
+    expect(weightCategoryFor(4_999)).toBe("LIGHT");
+    expect(weightCategoryFor(5_000)).toBe("MEDIUM");
+    expect(weightCategoryFor(20_000)).toBe("MEDIUM");
+    expect(weightCategoryFor(20_001)).toBe("HEAVY");
+  });
+});
+
+describe("formatWeight", () => {
+  it("shows grams as kg, or Not specified when missing", () => {
+    expect(formatWeight(12_500)).toBe("12.5 kg");
+    expect(formatWeight(1)).toBe("0.001 kg");
+    expect(formatWeight(1_250_000)).toBe("1,250 kg");
+    expect(formatWeight(null)).toBe("Not specified");
   });
 });
