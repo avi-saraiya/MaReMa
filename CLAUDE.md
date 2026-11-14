@@ -10,7 +10,7 @@ The full MVP plan is in `docs/MVP_PLAN.md`.
 ## Status
 Update this section as each feature lands.
 - [x] Foundation: Next.js scaffold, Prisma schema, initial migration, seed data, `src/lib/db.ts`, `src/lib/listing.ts` (types, materials JSON helpers, price formatting)
-- [ ] Name-only login and session cookie and middleware
+- [x] Name-only login and session cookie and middleware: `src/lib/session.ts` (`getCurrentUser`, `requireUser`), `src/actions/auth.ts` (`login`, `logout`), `src/middleware.ts`, and a `Header` with logout in the root layout
 - [ ] Home page with two tiles
 - [ ] Create listing form
 - [ ] Listings view (Supply and Request shown separately)
@@ -25,7 +25,7 @@ Update this section as each feature lands.
 - **Vitest** for unit tests and **Playwright** for e2e tests.
 
 ## Product Decisions (confirmed with the user)
-- **Login is name only.** The name is unique. Logging in with an existing name reuses that user's UUID (upsert by name). The user ID is kept in an httpOnly `userId` cookie, and `middleware.ts` redirects unauthenticated users to `/login`.
+- **Login is name only.** The name is unique. Logging in with an existing name reuses that user's UUID (upsert by name). The user ID is kept in an httpOnly `userId` cookie, and `src/middleware.ts` only checks that the cookie exists, and redirects to `/login` if it doesn't. Pages must call `requireUser()` to confirm the user actually exists, because a cookie can point to a deleted user.
 - The **home page** has two tiles: View Listings (`/listings`) and Create Listing (`/listings/new`).
 - A **listing** has these fields:
   - `type` (`SUPPLY` | `REQUEST`)
@@ -54,8 +54,8 @@ prisma/schema.prisma, seed.ts
 src/app/            page.tsx (tiles), login/, listings/, listings/new/, listings/[id]/
 src/actions/        auth.ts, listings.ts
 src/lib/            db.ts, session.ts, validation.ts
-src/components/     Tile, ListingCard, MaterialsInput
-middleware.ts
+src/components/     Header, Tile, ListingCard, MaterialsInput
+src/middleware.ts   (it must live in src/ because the project uses a src dir)
 tests/              Vitest unit + Playwright e2e
 ```
 
