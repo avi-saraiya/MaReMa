@@ -19,8 +19,9 @@ const SECTIONS: { type: ListingType; heading: string; description: string; empty
   },
 ];
 
-export default async function ListingsPage() {
+export default async function ListingsPage({ searchParams }: { searchParams: Promise<{ accepted?: string }> }) {
   await requireUser();
+  const { accepted } = await searchParams;
 
   // Only pending listings are shown; accepted (ACTIVE) ones stay in the database but drop out of this view.
   const listings = await db.listing.findMany({
@@ -46,6 +47,12 @@ export default async function ListingsPage() {
           Create listing
         </Link>
       </div>
+
+      {accepted && (
+        <p role="status" className="mt-6 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800">
+          Listing accepted. It has been removed from the current listings.
+        </p>
+      )}
 
       <div className="mt-8 grid gap-8 md:grid-cols-2">
         {SECTIONS.map((section) => {

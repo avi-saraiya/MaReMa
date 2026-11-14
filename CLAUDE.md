@@ -14,7 +14,7 @@ Update this section as each feature lands.
 - [x] Home page with two tiles (`src/components/Tile.tsx`), linking to `/listings` and `/listings/new`
 - [x] Create listing form: `/listings/new`, `createListing` in `src/actions/listings.ts`, `createListingSchema` and `readListingForm` in `src/lib/validation.ts`, and `MaterialsInput`. The client validates with the same schema before dispatching, and on success it redirects to `/listings`.
 - [x] Listings view: `/listings` shows PENDING listings in two sections, "Materials offered" (SUPPLY) and "Materials requested" (REQUEST), each a list of `ListingCard` title links to `/listings/[id]`
-- [ ] Listing detail page and Accept
+- [x] Listing detail page and Accept: `/listings/[id]` shows all fields. `AcceptButton` binds `acceptListing(listingId)`, which does an atomic guarded `updateMany` and redirects to `/listings?accepted=1` (with a success banner). Creators see "This is your listing", accepted listings show "Accepted by", and an unknown id returns a 404.
 - [ ] Tests (Vitest and Playwright)
 
 ## Tech Stack
