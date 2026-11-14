@@ -1,0 +1,9 @@
+   ▲ Next.js 15.5.4
+   - Local:        http://localhost:3123
+   - Network:      http://10.255.255.254:3123
+
+ ✓ Starting...
+ ✓ Ready in 479ms
+ ⚠ Missing `origin` header from a forwarded Server Actions request.
+ ⚠ Missing `origin` header from a forwarded Server Actions request.
+ ⚠ Missing `origin` header from a forwarded Server Actions request.
