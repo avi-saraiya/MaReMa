@@ -11,7 +11,7 @@ The full MVP plan is in `docs/MVP_PLAN.md`.
 Update this section as each feature lands.
 - [x] Foundation: Next.js scaffold, Prisma schema, initial migration, seed data, `src/lib/db.ts`, `src/lib/listing.ts` (types, materials JSON helpers, price formatting)
 - [x] Name-only login and session cookie and middleware: `src/lib/session.ts` (`getCurrentUser`, `requireUser`), `src/actions/auth.ts` (`login`, `logout`), `src/middleware.ts`, and a `Header` with logout in the root layout
-- [ ] Home page with two tiles
+- [x] Home page with two tiles (`src/components/Tile.tsx`), linking to `/listings` and `/listings/new`
 - [ ] Create listing form
 - [ ] Listings view (Supply and Request shown separately)
 - [ ] Listing detail page and Accept
