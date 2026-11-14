@@ -25,7 +25,11 @@ Post-MVP features:
 - [x] Weight category: `weightCategory` (`LIGHT` | `MEDIUM` | `HEAVY`, one per listing) is a required radio group on the create form and is shown on the detail page via `formatWeightCategory`. The column is nullable because older listings have no value, and the detail page shows those as "Not specified".
 - [x] Exact weight: `weightGrams` (integer grams, nullable for older listings) is a required "Weight (kg)" input on the create form (> 0, ≤ 10,000 kg, up to 3 decimals). `createListingSchema` checks that it falls inside the chosen category's range (`weightCategoryFor`), and the detail page shows it via `formatWeight`.
 - [x] Completion step: `completeExchange(listingId)` in `src/actions/listings.ts` moves an ACTIVE listing to COMPLETED and sets `completedAt`. It's an atomic guarded `updateMany` (`status = 'ACTIVE' AND (creatorId = user OR acceptedById = user)`), so either participant can complete it once, and nobody else can. `CompleteButton` shows on the detail page for participants of an ACTIVE listing, and a completed listing shows "Completed on".
-- [ ] Environmental impact dashboard: per-user totals (weight reused, materials reused, successful exchanges) over COMPLETED exchanges, for both the supplier and the requester.
+- [x] Environmental impact dashboard: `/dashboard` is linked from a "My Impact" home tile and a "My impact" header link.
+  - `getUserExchanges(userId)` in `src/lib/impact.ts` loads the user's COMPLETED and ACTIVE listings where they are the creator or the accepter.
+  - `summarizeImpact` totals weight reused (grams, with null counting as 0), materials reused (the number of material entries) and successful exchanges (the COMPLETED count).
+  - Totals are computed from the listings on each request, not stored as counters, so both participants always get the same credit.
+  - The page also lists "Waiting to be completed" (ACTIVE) and "Completed exchanges".
 
 ## Tech Stack
 - **Next.js 15 (App Router) + TypeScript.** It is a single monolith: pages are React Server Components, and mutations are **Server Actions**. There is no separate REST API.
@@ -36,7 +40,8 @@ Post-MVP features:
 
 ## Product Decisions (confirmed with the user)
 - **Login is name only.** The name is unique. Logging in with an existing name reuses that user's UUID (upsert by name). The user ID is kept in an httpOnly `userId` cookie, and `src/middleware.ts` only checks that the cookie exists, and redirects to `/login` if it doesn't. Pages must call `requireUser()` to confirm the user actually exists, because a cookie can point to a deleted user.
-- The **home page** has two tiles: View Listings (`/listings`) and Create Listing (`/listings/new`).
+- The **home page** has three tiles: View Listings (`/listings`), Create Listing (`/listings/new`) and My Impact (`/dashboard`).
+- The **impact dashboard** counts only COMPLETED exchanges, and credits both participants equally, whether they supplied or received.
 - A **listing** has these fields:
   - `type` (`SUPPLY` | `REQUEST`)
   - `title`, which the user enters
@@ -65,9 +70,9 @@ Post-MVP features:
 ## Layout
 ```
 prisma/schema.prisma, seed.ts
-src/app/            page.tsx (tiles), login/, listings/, listings/new/, listings/[id]/
+src/app/            page.tsx (tiles), login/, listings/, listings/new/, listings/[id]/, dashboard/
 src/actions/        auth.ts, listings.ts
-src/lib/            db.ts, session.ts, validation.ts
+src/lib/            db.ts, session.ts, validation.ts, listing.ts, impact.ts
 src/components/     Header, Tile, ListingCard, MaterialsInput
 src/middleware.ts   (it must live in src/ because the project uses a src dir)
 tests/unit/         Vitest (vitest.config.ts); global-setup.ts migrates prisma/test.db

@@ -13,6 +13,9 @@ export default async function Header() {
           MaReMa
         </Link>
         <div className="flex items-center gap-3 text-sm">
+          <Link href="/dashboard" className="font-medium text-emerald-700 hover:text-emerald-900">
+            My impact
+          </Link>
           <span className="text-gray-600">
             Signed in as <span className="font-medium text-gray-900">{user.name}</span>
           </span>

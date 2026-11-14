@@ -22,6 +22,13 @@ async function sessionCookie(page: Page) {
   return (await page.context().cookies()).find((c) => c.name === "userId")?.value;
 }
 
+async function expectImpact(page: Page, totals: { weight: string; materials: string; exchanges: string }) {
+  await expect(page.getByRole("heading", { name: "Your environmental impact" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Weight reused" })).toContainText(totals.weight);
+  await expect(page.getByRole("group", { name: "Materials reused" })).toContainText(totals.materials);
+  await expect(page.getByRole("group", { name: "Successful exchanges" })).toContainText(totals.exchanges);
+}
+
 test.afterAll(() => db.$disconnect());
 
 test("redirects to login when not signed in", async ({ page }) => {
@@ -115,8 +122,16 @@ test("create a supply listing, then another user accepts it", async ({ page, bro
   expect(listing.acceptedBy?.name).toBe(BOB);
   expect(listing.acceptedAt).not.toBeNull();
 
-  // Bob, who accepted, marks the exchange as completed after the hand-off.
-  await page.goto(detailUrl);
+  // Before completion, Bob's dashboard lists it as waiting and his totals are still zero.
+  await page.getByRole("link", { name: "My impact" }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expectImpact(page, { weight: "0 kg", materials: "0", exchanges: "0" });
+  const waiting = page.getByRole("region", { name: "Waiting to be completed" });
+  await expect(waiting.getByRole("link", { name: new RegExp(TITLE) })).toContainText(`${ALICE} supplied you`);
+
+  // Bob, who accepted, opens it from the dashboard and marks it as completed after the hand-off.
+  await waiting.getByRole("link", { name: new RegExp(TITLE) }).click();
+  await expect(page).toHaveURL(detailUrl);
   await expect(page.getByText("Active", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Mark as completed" }).click();
   await expect(page.getByText("This exchange has been completed.")).toBeVisible();
@@ -125,10 +140,23 @@ test("create a supply listing, then another user accepts it", async ({ page, bro
   await expect(page.getByRole("button", { name: "Mark as completed" })).toHaveCount(0);
   expect((await db.listing.findUniqueOrThrow({ where: { id: listing.id } })).status).toBe("COMPLETED");
 
+  // The completed exchange now counts on Bob's dashboard (35 kg, 2 materials, 1 exchange)...
+  await page.goto("/dashboard");
+  await expectImpact(page, { weight: "35 kg", materials: "2", exchanges: "1" });
+  await expect(page.getByRole("region", { name: "Waiting to be completed" }).getByRole("link")).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "Completed exchanges" }).getByRole("link", { name: new RegExp(TITLE) }),
+  ).toBeVisible();
+
   // Logging in again as Alice reuses the same user.
   await page.getByRole("button", { name: "Log out" }).click();
   await expect(page).toHaveURL(/\/login$/);
   await login(page, ALICE);
   expect(await sessionCookie(page)).toBe(aliceId);
   expect(await db.user.count({ where: { name: ALICE } })).toBe(1);
+
+  // ...and on Alice's, as the supplier, reached from the home tile.
+  await page.getByRole("link", { name: /My Impact/ }).click();
+  await expectImpact(page, { weight: "35 kg", materials: "2", exchanges: "1" });
+  await expect(page.getByRole("region", { name: "Completed exchanges" })).toContainText(`You supplied ${BOB}`);
 });

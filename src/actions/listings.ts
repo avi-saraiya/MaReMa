@@ -44,6 +44,7 @@ export async function acceptListing(listingId: string): Promise<AcceptListingSta
   }
 
   revalidatePath("/listings");
+  revalidatePath("/dashboard");
   redirect("/listings?accepted=1");
 }
 
@@ -77,5 +78,6 @@ export async function completeExchange(listingId: string): Promise<CompleteExcha
   }
 
   revalidatePath(`/listings/${listingId}`);
+  revalidatePath("/dashboard");
   return {};
 }

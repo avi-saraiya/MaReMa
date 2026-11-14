@@ -40,6 +40,21 @@ async function main() {
         weightGrams: 8_000,
         creatorId: alice.id,
       },
+      {
+        // A finished exchange so both Alice's and Bob's impact dashboards have something to show.
+        type: "SUPPLY",
+        title: "Spare textbook shelving",
+        materials: serializeMaterials(["Metal shelving unit", "Shelf brackets"]),
+        exchangeLocation: "Main library, back entrance",
+        priceCents: 1000,
+        weightCategory: "HEAVY",
+        weightGrams: 32_000,
+        status: "COMPLETED",
+        creatorId: bob.id,
+        acceptedById: alice.id,
+        acceptedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+        completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      },
     ],
   });
 }
