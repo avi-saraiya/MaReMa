@@ -77,6 +77,21 @@ export const createListingSchema = listingFieldsSchema.superRefine((listing, ctx
 export type CreateListingInput = z.infer<typeof createListingSchema>;
 export type CreateListingErrors = Partial<Record<keyof CreateListingInput, string[]>>;
 
+export const PHOTO_MEDIA_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
+export type PhotoMediaType = (typeof PHOTO_MEDIA_TYPES)[number];
+export const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
+
+// A photo uploaded for repurposing analysis. It is analyzed and then discarded, never stored.
+export const photoSchema = z
+  .custom<File>((value) => typeof File !== "undefined" && value instanceof File && value.size > 0, {
+    message: "Choose a photo to analyze.",
+  })
+  .refine(
+    (file) => (PHOTO_MEDIA_TYPES as readonly string[]).includes(file.type),
+    "The photo must be a JPEG, PNG, WebP or GIF image.",
+  )
+  .refine((file) => file.size <= MAX_PHOTO_BYTES, "The photo must be 4 MB or smaller.");
+
 // Shared by the client form and the server action so both validate identical input.
 export function readListingForm(formData: FormData) {
   return {

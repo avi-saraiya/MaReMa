@@ -14,7 +14,8 @@ export default defineConfig({
   webServer: {
     command: `npx prisma migrate deploy && npm run build && npx next start -p ${PORT}`,
     url: `http://localhost:${PORT}/login`,
-    env: { DATABASE_URL: E2E_DATABASE_URL },
+    // MAREMA_FAKE_AI returns a canned photo analysis, so e2e runs never call the Anthropic API.
+    env: { DATABASE_URL: E2E_DATABASE_URL, MAREMA_FAKE_AI: "1" },
     reuseExistingServer: false,
     timeout: 240_000,
   },

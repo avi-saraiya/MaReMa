@@ -2,12 +2,16 @@
 
 import { useRef, useState } from "react";
 
-type MaterialsInputProps = { inputClassName: string; describedBy?: string };
+type MaterialsInputProps = { inputClassName: string; describedBy?: string; defaultValues?: string[] };
+
+const MAX_ROWS = 20;
 
 // Uncontrolled inputs that all submit under the "materials" key; rows are tracked by id so removal keeps values intact.
-export default function MaterialsInput({ inputClassName, describedBy }: MaterialsInputProps) {
-  const nextId = useRef(1);
-  const [rows, setRows] = useState<number[]>([0]);
+// defaultValues only seeds the first render, so remount with a new `key` to pre-fill it again.
+export default function MaterialsInput({ inputClassName, describedBy, defaultValues }: MaterialsInputProps) {
+  const initial = defaultValues?.length ? defaultValues.slice(0, MAX_ROWS) : [""];
+  const nextId = useRef(initial.length);
+  const [rows, setRows] = useState<number[]>(() => initial.map((_, i) => i));
 
   return (
     <div className="space-y-2">
@@ -17,6 +21,7 @@ export default function MaterialsInput({ inputClassName, describedBy }: Material
             name="materials"
             type="text"
             maxLength={100}
+            defaultValue={initial[id]}
             aria-label={`Material ${index + 1}`}
             aria-describedby={describedBy}
             placeholder={index === 0 ? "e.g. Plywood sheets" : undefined}
@@ -34,7 +39,7 @@ export default function MaterialsInput({ inputClassName, describedBy }: Material
           )}
         </div>
       ))}
-      {rows.length < 20 && (
+      {rows.length < MAX_ROWS && (
         <button
           type="button"
           onClick={() => setRows((r) => [...r, nextId.current++])}

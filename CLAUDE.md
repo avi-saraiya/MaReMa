@@ -30,6 +30,12 @@ Post-MVP features:
   - `summarizeImpact` totals weight reused (grams, with null counting as 0), materials reused (the number of material entries) and successful exchanges (the COMPLETED count).
   - Totals are computed from the listings on each request, not stored as counters, so both participants always get the same credit.
   - The page also lists "Waiting to be completed" (ACTIVE) and "Completed exchanges".
+- [x] Photo repurposing check (part A): when the create form's type is SUPPLY, an optional panel with `PhotoAnalyzer` lets the user take or pick a photo.
+  - The browser downscales it to a JPEG (long edge ≤ 1568 px) and sends it to `analyzePhoto` in `src/actions/repurpose.ts`, which validates it with `photoSchema` (JPEG/PNG/WebP/GIF, ≤ 4 MB) and maps Anthropic SDK errors to friendly messages.
+  - `analyzeMaterialsPhoto` in `src/lib/repurpose.ts` calls `claude-opus-5-5` through `client.beta.messages.parse` with structured output (`repurposeAnalysisSchema`, written in `zod/v4` because the SDK helper needs it) and server-side refusal fallbacks (`fallbacks: "default"`). `normalizeAnalysis` caps the result to the form's limits.
+  - The photo is never stored. "Continue to listing" pre-fills the title and materials (`MaterialsInput` takes `defaultValues`, remounted via `key`).
+  - `MAREMA_FAKE_AI=1` returns a canned analysis; Playwright sets it so e2e never calls the API. `ANTHROPIC_API_KEY` must be set in `.env` for the real check.
+- [ ] Photo repurposing check (part B): "I'll repurpose them" records a `Repurposing` that counts on the impact dashboard.
 
 ## Tech Stack
 - **Next.js 15 (App Router) + TypeScript.** It is a single monolith: pages are React Server Components, and mutations are **Server Actions**. There is no separate REST API.
@@ -71,9 +77,9 @@ Post-MVP features:
 ```
 prisma/schema.prisma, seed.ts
 src/app/            page.tsx (tiles), login/, listings/, listings/new/, listings/[id]/, dashboard/
-src/actions/        auth.ts, listings.ts
-src/lib/            db.ts, session.ts, validation.ts, listing.ts, impact.ts
-src/components/     Header, Tile, ListingCard, MaterialsInput
+src/actions/        auth.ts, listings.ts, repurpose.ts
+src/lib/            db.ts, session.ts, validation.ts, listing.ts, impact.ts, repurpose.ts (Claude photo analysis)
+src/components/     Header, Tile, ListingCard, MaterialsInput, PhotoAnalyzer
 src/middleware.ts   (it must live in src/ because the project uses a src dir)
 tests/unit/         Vitest (vitest.config.ts); global-setup.ts migrates prisma/test.db
 tests/e2e/          Playwright (playwright.config.ts); builds the app and serves it on :3100 against prisma/e2e.db
@@ -93,14 +99,14 @@ tests/e2e/          Playwright (playwright.config.ts); builds the app and serves
 - Real authentication or SSO
 - Editing or deleting listings
 - Messaging
-- Images
+- Storing images (photos are only sent to Claude for the repurposing check)
 - Search and filters
 - Notifications
-- Completing or cancelling exchanges
+- Cancelling exchanges
 - Multi-university support
 
 **Future ideas:**
 - SSO with the university email
-- A `COMPLETED` status and cancellation
+- Cancelling exchanges
 - Moving to Postgres
 - Filtering by material or location

@@ -3,7 +3,9 @@
 import { startTransition, useActionState, useState } from "react";
 import { createListing, type CreateListingState } from "@/actions/listings";
 import MaterialsInput from "@/components/MaterialsInput";
+import PhotoAnalyzer from "@/components/PhotoAnalyzer";
 import { WEIGHT_CATEGORIES, WEIGHT_CATEGORY_INFO } from "@/lib/listing";
+import type { RepurposeAnalysis } from "@/lib/repurpose";
 import { createListingSchema, readListingForm, type CreateListingErrors } from "@/lib/validation";
 
 const inputClass =
@@ -22,6 +24,19 @@ export default function CreateListingForm() {
   const [state, formAction, pending] = useActionState<CreateListingState, FormData>(createListing, {});
   const [clientErrors, setClientErrors] = useState<CreateListingErrors | null>(null);
   const errors = clientErrors ?? state.errors ?? {};
+  const [type, setType] = useState<string | null>(null);
+  const [checkOpen, setCheckOpen] = useState(true);
+  // Values from the photo check. Bumping `key` remounts the uncontrolled title and materials inputs with them.
+  const [prefill, setPrefill] = useState({ key: 0, title: "", materials: [] as string[] });
+
+  function continueFromAnalysis(analysis: RepurposeAnalysis) {
+    setPrefill((p) => ({
+      key: p.key + 1,
+      title: analysis.suggestedTitle,
+      materials: analysis.objects.map((o) => o.name),
+    }));
+    setCheckOpen(false);
+  }
 
   // Validate with the shared schema first; dispatching manually also stops React from resetting the form on a server error.
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -49,7 +64,13 @@ export default function CreateListingForm() {
               key={option.value}
               className="flex cursor-pointer gap-3 rounded-lg border border-gray-300 p-3 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50"
             >
-              <input type="radio" name="type" value={option.value} className="mt-1 accent-emerald-700" />
+              <input
+                type="radio"
+                name="type"
+                value={option.value}
+                onChange={(event) => setType(event.target.value)}
+                className="mt-1 accent-emerald-700"
+              />
               <span>
                 <span className="block font-medium">{option.label}</span>
                 <span className="block text-sm text-gray-600">{option.hint}</span>
@@ -60,18 +81,67 @@ export default function CreateListingForm() {
         <FieldError id="type-error" messages={errors.type} />
       </fieldset>
 
+      {type === "SUPPLY" && (
+        <section
+          aria-labelledby="photo-check-heading"
+          className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 id="photo-check-heading" className="font-medium">
+                Could these be repurposed? (optional)
+              </h2>
+              <p className="text-sm text-gray-600">
+                Snap a photo and we&apos;ll suggest ways to reuse the materials before you list them.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCheckOpen((open) => !open)}
+              aria-expanded={checkOpen}
+              className="shrink-0 text-sm font-medium text-emerald-700 hover:text-emerald-900"
+            >
+              {checkOpen ? "Hide" : "Show"}
+            </button>
+          </div>
+          {prefill.key > 0 && !checkOpen && (
+            <p role="status" className="mt-2 text-sm text-emerald-800">
+              We filled in the title and materials from your photo. Check them before you submit.
+            </p>
+          )}
+          {/* Hidden rather than unmounted, so the analysis survives collapsing the panel. */}
+          <div hidden={!checkOpen} className="mt-4">
+            <PhotoAnalyzer onContinue={continueFromAnalysis} />
+          </div>
+        </section>
+      )}
+
       <div>
         <label htmlFor="title" className="block text-sm font-medium">
           Title
         </label>
-        <input id="title" name="title" type="text" maxLength={100} aria-describedby="title-error" className={`mt-1 ${inputClass}`} />
+        <input
+          key={prefill.key}
+          id="title"
+          name="title"
+          type="text"
+          maxLength={100}
+          defaultValue={prefill.title}
+          aria-describedby="title-error"
+          className={`mt-1 ${inputClass}`}
+        />
         <FieldError id="title-error" messages={errors.title} />
       </div>
 
       <div>
         <span className="block text-sm font-medium">Materials</span>
         <div className="mt-1">
-          <MaterialsInput inputClassName={inputClass} describedBy="materials-error" />
+          <MaterialsInput
+            key={prefill.key}
+            inputClassName={inputClass}
+            describedBy="materials-error"
+            defaultValues={prefill.materials}
+          />
         </div>
         <FieldError id="materials-error" messages={errors.materials} />
       </div>
