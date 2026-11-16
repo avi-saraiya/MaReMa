@@ -32,7 +32,7 @@ Post-MVP features:
   - The page also lists "Waiting to be completed" (ACTIVE) and "Completed exchanges".
 - [x] Photo repurposing check (part A): when the create form's type is SUPPLY, an optional panel with `PhotoAnalyzer` lets the user take or pick a photo.
   - The browser downscales it to a JPEG (long edge ≤ 1568 px) and sends it to `analyzePhoto` in `src/actions/repurpose.ts`, which validates it with `photoSchema` (JPEG/PNG/WebP/GIF, ≤ 4 MB) and maps Anthropic SDK errors to friendly messages.
-  - `analyzeMaterialsPhoto` in `src/lib/repurpose.ts` calls `claude-opus-5-5` through `client.beta.messages.parse` with structured output (`repurposeAnalysisSchema`, written in `zod/v4` because the SDK helper needs it) and server-side refusal fallbacks (`fallbacks: "default"`). `normalizeAnalysis` caps the result to the form's limits.
+  - `analyzeMaterialsPhoto` in `src/lib/repurpose.ts` calls `claude-haiku-5-5` (chosen by the user for cost) through `client.messages.parse` with structured output (`repurposeAnalysisSchema`, written in `zod/v4` because the SDK helper needs it). Haiku has no server-side refusal fallback, so a refusal returns a friendly error. `normalizeAnalysis` caps the result to the form's limits.
   - The photo is never stored. "Continue to listing" pre-fills the title and materials (`MaterialsInput` takes `defaultValues`, remounted via `key`).
   - `MAREMA_FAKE_AI=1` returns a canned analysis; Playwright sets it so e2e never calls the API. `ANTHROPIC_API_KEY` must be set in `.env` for the real check.
 - [ ] Photo repurposing check (part B): "I'll repurpose them" records a `Repurposing` that counts on the impact dashboard.

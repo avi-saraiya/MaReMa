@@ -1,10 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 // The SDK's structured-output helper is built on Zod 4, which zod 3.25 ships under this subpath.
 import { z } from "zod/v4";
 import type { PhotoMediaType } from "@/lib/validation";
 
-export const ANALYSIS_MODEL = "claude-opus-5-5";
+// Haiku keeps each check well under a cent. Swap in "claude-opus-5-5" if the ideas aren't good enough.
+export const ANALYSIS_MODEL = "claude-haiku-5-5";
 
 // The shape Claude must return. Structured outputs guarantee the response matches it.
 export const repurposeAnalysisSchema = z.object({
@@ -74,13 +75,10 @@ export async function analyzeMaterialsPhoto(base64: string, mediaType: PhotoMedi
   if (process.env.MAREMA_FAKE_AI === "1") return { analysis: FAKE_ANALYSIS };
 
   client ??= new Anthropic();
-  const message = await client.beta.messages.parse({
+  const message = await client.messages.parse({
     model: ANALYSIS_MODEL,
     max_tokens: 16000,
-    // On a safety decline, the API retries on a fallback model it picks for the decline's category.
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    output_config: { effort: "medium", format: betaZodOutputFormat(repurposeAnalysisSchema) },
+    output_config: { effort: "medium", format: zodOutputFormat(repurposeAnalysisSchema) },
     system: SYSTEM_PROMPT,
     messages: [
       {
@@ -93,6 +91,7 @@ export async function analyzeMaterialsPhoto(base64: string, mediaType: PhotoMedi
     ],
   });
 
+  // Haiku has no server-side fallback model, so a safety decline ends here.
   if (message.stop_reason === "refusal") {
     return { error: "This photo couldn't be analyzed. Try a different photo of the materials." };
   }
